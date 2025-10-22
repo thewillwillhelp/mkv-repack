@@ -1,0 +1,33 @@
+[MASTER]
+# ignore=venv
+# jobs=1
+# load-plugins=pylint_django
+
+[MESSAGES CONTROL]
+disable=
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    R0903,  # too-few-public-methods
+    R0201,  # method could be a function
+    W0611,  # unused-import
+
+[FORMAT]
+max-line-length=80
+indent-string='    '
+
+[DESIGN]
+max-args=5
+max-locals=15
+max-returns=6
+max-branches=12
+max-statements=50
+max-parents=7
+max-attributes=10
+
+[TYPECHECK]
+# ignored-modules=numpy,pandas,matplotlib
+
+[REPORTS]
+output-format=colorized
+reports=no
