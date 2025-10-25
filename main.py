@@ -4,6 +4,8 @@ import subprocess
 import sys
 import logging
 import json
+from ve_utils.selection import SelectionMode
+from ve_utils.stream_info import StreamInfo
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -85,66 +87,6 @@ def wrapped_main(stdscr):
         raise exc
     except Exception as exc:
         logging.error(f"Global error {str(exc)}")
-
-class StreamInfo:
-    def __init__(self, stream_data):
-        stream_info = {
-            "index": stream_data["index"],
-            "codec_type": stream_data["codec_type"],
-            "codec_name": stream_data["codec_name"],
-
-        }
-
-        if "tags" in stream_data:
-            stream_info["tags"] = stream_data["tags"]
-        else:
-            stream_info["tags"] = {}
-
-        self.container = stream_info
-
-    def __str__(self):
-        stream_info = self.container
-        return (f"Stream {stream_info['index']} ({stream_info["codec_type"]}={stream_info['codec_name']}): " +
-            f"{stream_info["tags"].get("title", '')} ({stream_info["tags"].get("language", '')})")
-
-
-class SelectionMode:
-    def __init__(self):
-        self.mode = "file_list"
-        self.selection = {
-            "file_list": {
-                "index": 0,
-                "max": 0
-            },
-            "stream_info": {
-                "index": 0,
-                "max": 0
-            },
-        }
-
-    def get_index(self, mode):
-        return self.selection[mode]["index"]
-
-    def set_index(self, mode, index):
-        self.selection[mode]["index"] = index
-
-    def set_max(self, mode, max_value):
-        self.selection[mode]["max"] = max_value
-
-    def set_mode(self, mode):
-        self.mode = mode
-
-    def selection_up(self):
-        selected_index = self.selection[self.mode]["index"]
-        selected_index = max(0, selected_index - 1)
-        self.selection[self.mode]["index"] = selected_index
-
-    def selection_down(self):
-        selected_index = self.selection[self.mode]["index"]
-        selected_index = min(self.selection[self.mode]["max"] - 1, selected_index + 1)
-        self.selection[self.mode]["index"] = selected_index
-
-
 
 
 
