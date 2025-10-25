@@ -42,19 +42,6 @@ def get_streams(file_path):
         return str(exc)
 
 
-def list_dir(stdscr, dir_content, selected_index):
-    height, width = stdscr.getmaxyx()
-
-    # Display directory content
-    for i, item in enumerate(dir_content):
-        if i + 2 >= height:
-            break
-        display_str = item
-        if i == selected_index:
-            stdscr.addstr(i + 2, 0, display_str, curses.A_REVERSE)
-        else:
-            stdscr.addstr(i + 2, 0, display_str)
-
 def split_by_width(text, width):
     return [text[i:i+width] for i in range(0, len(text), width)]
 
@@ -78,6 +65,18 @@ def print_long_text(stdscr, text):
             if i + lines_offset >= height - 2:
                 break
 
+def draw_list(stdscr, list_data, selected_index, left_offset=0):
+    height, width = stdscr.getmaxyx()
+
+    for i, item in enumerate(list_data):
+        if i + 2 >= height:
+            break
+        display_str = item
+        if i == selected_index:
+            stdscr.addstr(i + 2, left_offset, display_str, curses.A_REVERSE)
+        else:
+            stdscr.addstr(i + 2, left_offset, display_str)
+
 
 def wrapped_main(stdscr):
     try:
@@ -86,6 +85,27 @@ def wrapped_main(stdscr):
         raise exc
     except Exception as exc:
         logging.error(f"Global error {str(exc)}")
+
+class StreamInfo:
+    def __init__(self, stream_data):
+        stream_info = {
+            "index": stream_data["index"],
+            "codec_type": stream_data["codec_type"],
+            "codec_name": stream_data["codec_name"],
+
+        }
+
+        if "tags" in stream_data:
+            stream_info["tags"] = stream_data["tags"]
+        else:
+            stream_info["tags"] = {}
+
+        self.container = stream_info
+
+    def __str__(self):
+        stream_info = self.container
+        return (f"Stream {stream_info['index']} ({stream_info["codec_type"]}={stream_info['codec_name']}): " +
+            f"{stream_info["tags"].get("title", '')} ({stream_info["tags"].get("language", '')})")
 
 
 def main(stdscr):
@@ -99,6 +119,9 @@ def main(stdscr):
 
     current_path = os.getcwd() if len(sys.argv) < 2 else sys.argv[1]
     selected_index = 0
+    selected_streams_index = 0
+
+    stream_lines = []
 
     while True:
         height, width = stdscr.getmaxyx()
@@ -115,7 +138,8 @@ def main(stdscr):
             current_path = os.path.dirname(current_path)
             return
 
-        list_dir(stdscr, dir_content, selected_index)
+        draw_list(stdscr, dir_content, selected_index)
+        draw_list(stdscr, stream_lines, selected_streams_index, left_offset=width // 2)
 
         key = stdscr.getch()
 
@@ -136,23 +160,18 @@ def main(stdscr):
                 )
 
                 streams = []
+                stream_lines = []
                 for stream in streams_data["streams"]:
-                    stream_info = {
-                        "index": stream["index"],
-                        "codec_type": stream["codec_type"],
-                        "codec_name": stream["codec_name"],
-                    }
-                    if "tags" in stream:
-                        stream_info["tags"] = stream["tags"]
+                    stream_info = StreamInfo(stream)
                     streams.append(stream_info)
-
-
-
+                    stream_lines.append(
+                        str(stream_info)
+                    )
                     # stdscr.addstr(i + lines_offset, width // 2, line[:(width // 2 - 1)])
 
                 stdscr.addstr(height - 1, 0, str(len(streams)))
-                stdscr.refresh()
-                stdscr.getch()
+                # stdscr.refresh()
+                # stdscr.getch()
         elif key == curses.KEY_LEFT:
             current_path = os.path.dirname(current_path)
             selected_index = 0
