@@ -108,18 +108,55 @@ class StreamInfo:
             f"{stream_info["tags"].get("title", '')} ({stream_info["tags"].get("language", '')})")
 
 
+class SelectionMode:
+    def __init__(self):
+        self.mode = "file_list"
+        self.selection = {
+            "file_list": {
+                "index": 0,
+                "max": 0
+            },
+            "stream_info": {
+                "index": 0,
+                "max": 0
+            },
+        }
+
+    def get_index(self, mode):
+        return self.selection[mode]["index"]
+
+    def set_index(self, mode, index):
+        self.selection[mode]["index"] = index
+
+    def set_max(self, mode, max_value):
+        self.selection[mode]["max"] = max_value
+
+    def set_mode(self, mode):
+        self.mode = mode
+
+    def selection_up(self):
+        selected_index = self.selection[self.mode]["index"]
+        selected_index = max(0, selected_index - 1)
+        self.selection[self.mode]["index"] = selected_index
+
+    def selection_down(self):
+        selected_index = self.selection[self.mode]["index"]
+        selected_index = min(self.selection[self.mode]["max"] - 1, selected_index + 1)
+        self.selection[self.mode]["index"] = selected_index
+
+
+
+
+
+
 def main(stdscr):
-    """
-    Main function to run the TUI.
-    """
     curses.curs_set(0)
 
     stdscr.clear()
     stdscr.refresh()
 
     current_path = os.getcwd() if len(sys.argv) < 2 else sys.argv[1]
-    selected_index = 0
-    selected_streams_index = 0
+    selection = SelectionMode()
 
     stream_lines = []
 
@@ -138,25 +175,28 @@ def main(stdscr):
             current_path = os.path.dirname(current_path)
             return
 
-        draw_list(stdscr, dir_content, selected_index)
-        draw_list(stdscr, stream_lines, selected_streams_index, left_offset=width // 2)
+        selection.set_max("file_list", len(dir_content))
+        selection.set_max("stream_info", len(stream_lines))
+
+        draw_list(stdscr, dir_content, selection.get_index("file_list"))
+        draw_list(stdscr, stream_lines, selection.get_index("stream_info"), left_offset=width // 2)
 
         key = stdscr.getch()
 
         if key == curses.KEY_UP:
-            selected_index = max(0, selected_index - 1)
+            selection.selection_up()
         elif key == curses.KEY_DOWN:
-            selected_index = min(len(dir_content) - 1, selected_index + 1)
+            selection.selection_down()
         elif key == curses.KEY_RIGHT or key == ord("\n"):
-            selected_path = os.path.join(current_path, dir_content[selected_index])
+            selected_path = os.path.join(current_path, dir_content[selection.get_index("file_list")])
             if os.path.isdir(selected_path):
                 current_path = selected_path
-                selected_index = 0
+                selection.set_index("file_list", 0)
             else:
                 streams_json = get_streams(selected_path)
                 streams_data = json.loads(streams_json)
                 stdscr.addstr(
-                    height - 2, 0, f"Streams for {dir_content[selected_index]}:"
+                    height - 2, 0, f"Streams for {dir_content[selection.get_index("file_list")]}:"
                 )
 
                 streams = []
@@ -167,14 +207,15 @@ def main(stdscr):
                     stream_lines.append(
                         str(stream_info)
                     )
-                    # stdscr.addstr(i + lines_offset, width // 2, line[:(width // 2 - 1)])
 
                 stdscr.addstr(height - 1, 0, str(len(streams)))
-                # stdscr.refresh()
-                # stdscr.getch()
+                selection.set_mode("stream_info")
         elif key == curses.KEY_LEFT:
-            current_path = os.path.dirname(current_path)
-            selected_index = 0
+            if selection.mode == "file_list":
+                current_path = os.path.dirname(current_path)
+                selection.set_index("file_list", 0)
+            selection.set_mode("file_list")
+            stream_lines = []
         elif key == ord("q"):
             break
 
