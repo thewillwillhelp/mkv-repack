@@ -5,7 +5,7 @@ import sys
 import logging
 import json
 from ve_utils.selection import SelectionMode
-from ve_utils.stream_info import StreamInfo
+from ve_utils.stream_info import StreamInfo, VideoContainer
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -89,6 +89,12 @@ def wrapped_main(stdscr):
         logging.error(f"Global error {str(exc)}")
 
 
+def decorate_with_checbox(list_to_decorate):
+    result_list = []
+    for i, val in enumerate(list_to_decorate):
+        result_list.append(" [*] " + val)
+    return result_list
+
 
 
 def main(stdscr):
@@ -99,8 +105,7 @@ def main(stdscr):
 
     current_path = os.getcwd() if len(sys.argv) < 2 else sys.argv[1]
     selection = SelectionMode()
-
-    stream_lines = []
+    video_container = VideoContainer()
 
     while True:
         height, width = stdscr.getmaxyx()
@@ -118,10 +123,10 @@ def main(stdscr):
             return
 
         selection.set_max("file_list", len(dir_content))
-        selection.set_max("stream_info", len(stream_lines))
+        selection.set_max("stream_info", len(video_container.get_stream_titles()))
 
         draw_list(stdscr, dir_content, selection.get_index("file_list"))
-        draw_list(stdscr, stream_lines, selection.get_index("stream_info"), left_offset=width // 2)
+        draw_list(stdscr, video_container.get_stream_titles(), selection.get_index("stream_info"), left_offset=width // 2)
 
         key = stdscr.getch()
 
@@ -141,23 +146,19 @@ def main(stdscr):
                     height - 2, 0, f"Streams for {dir_content[selection.get_index("file_list")]}:"
                 )
 
-                streams = []
-                stream_lines = []
-                for stream in streams_data["streams"]:
-                    stream_info = StreamInfo(stream)
-                    streams.append(stream_info)
-                    stream_lines.append(
-                        str(stream_info)
-                    )
+                video_container = VideoContainer()
+                video_container.add_streams(streams_data)
 
-                stdscr.addstr(height - 1, 0, str(len(streams)))
                 selection.set_mode("stream_info")
         elif key == curses.KEY_LEFT:
             if selection.mode == "file_list":
                 current_path = os.path.dirname(current_path)
                 selection.set_index("file_list", 0)
             selection.set_mode("file_list")
-            stream_lines = []
+            video_container = VideoContainer()
+        elif key == ord(" "):
+            if selection.mode == "stream_info":
+                video_container.toggle_stream(selection.get_index("stream_info"))
         elif key == ord("q"):
             break
 

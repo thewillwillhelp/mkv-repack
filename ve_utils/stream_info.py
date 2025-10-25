@@ -1,3 +1,27 @@
+class VideoContainer:
+    def __init__(self):
+        self.streams = []
+
+    def add_streams(self, video_data):
+        for stream in video_data["streams"]:
+            stream_info = StreamInfo(stream)
+            self.streams.append({
+                "info": stream_info,
+                "checked": True
+            })
+
+    def get_stream_titles(self):
+        result_list = []
+        for i, stream in enumerate(self.streams):
+            checked_status = "[X] " if stream["checked"] else "[ ] "
+            result_list.append(checked_status + str(stream["info"]))
+
+        return result_list
+
+    def toggle_stream(self, index):
+        self.streams[index]["checked"] = not self.streams[index]["checked"]
+
+
 class StreamInfo:
     def __init__(self, stream_data):
         stream_info = {
