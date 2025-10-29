@@ -4,6 +4,7 @@ TUI tool to repack mkv containers using ffmpeg under the hood
 
 Currently it allows
 
+1. list dir
 1. list streams in mkv container
 2. remove streams
 3. reorder streams
@@ -11,5 +12,5 @@ Currently it allows
 ### Usage:
 
 ```
-python ./main.py ~/dir/with/video.mkv
+python ./main.py ~/dir/with/video/
 ```
